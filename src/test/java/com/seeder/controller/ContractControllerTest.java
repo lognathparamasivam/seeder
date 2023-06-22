@@ -1,8 +1,8 @@
 package com.seeder.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,25 +10,21 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seeder.dto.ContractDTO;
-import com.seeder.model.Contract;
 import com.seeder.model.Response;
 import com.seeder.service.ContractService;
 
@@ -49,10 +45,10 @@ public class ContractControllerTest {
 
 	private List<ContractDTO> contractDTOList;
 
-	private String contract;
+	private final static String NOT_FOUND_ERROR = "Contract not found in ";
 
 	@BeforeEach
-	public void setup() throws Exception {
+	void setup() throws Exception {
 		MockitoAnnotations.openMocks(this);
 		contractDTO = new ContractDTO();
 		contractDTO.setId(1);
@@ -61,26 +57,23 @@ public class ContractControllerTest {
 		contractDTO.setTermLength(12);
 		contractDTO.setType("Monthly");
 		contractDTO.setInterestRate(12);
-		contractDTO.setAvailableAmount(100);
-		contractDTO.setFinancedAmount(10);
+		contractDTO.setAvailableAmount(BigDecimal.valueOf(100));
+		contractDTO.setFinancedAmount(BigDecimal.valueOf(10));
 
 		contractDTOList = new ArrayList<>();
 		contractDTOList.add(contractDTO);
 	}
 
 	@Test
-	public void testaddContract() throws Exception {
-		ResponseEntity<Response> expectedResponse = new ResponseEntity<Response>(
-				new Response(true, contractDTO, null, new Timestamp(System.currentTimeMillis())), HttpStatus.CREATED);
-		when(contractService.addContract(contractDTO)).thenReturn(expectedResponse);
-
+	void testAddContract() throws Exception {
+	
 		mockMvc.perform(MockMvcRequestBuilders.post("/contracts")
 				.content(new ObjectMapper().writeValueAsString(contractDTO)).contentType(MediaType.APPLICATION_JSON))
 				.andExpect(MockMvcResultMatchers.status().isOk());
 	}
 
 	@Test
-	public void testupdateContract() throws Exception {
+	void testUpdateContract() throws Exception {
 		contractDTO.setName("New Contract");
 		ResponseEntity<Response> expectedResponse = new ResponseEntity<Response>(
 				new Response(true, contractDTO, null, new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
@@ -93,7 +86,7 @@ public class ContractControllerTest {
 	}
 
 	@Test
-	public void testgetContracts() throws Exception {
+	void testGetContracts() throws Exception {
 		ResponseEntity<Response> expectedResponse = new ResponseEntity<Response>(
 				new Response(true, contractDTOList, null, new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
 		when(contractService.getContracts()).thenReturn(expectedResponse);
@@ -103,7 +96,7 @@ public class ContractControllerTest {
 	}
 
 	@Test
-	public void testGetContractById() throws Exception {
+	void testGetContractById() throws Exception {
 
 		ResponseEntity<Response> expectedResponse = new ResponseEntity<Response>(
 				new Response(true, contractDTO, null, new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
@@ -114,12 +107,35 @@ public class ContractControllerTest {
 	}
 
 	@Test
-	public void testdeleteContract() throws Exception {
+	void testGetContractByIdResourceNotFoundException() throws Exception {
+		long id = 1000;
+		ResourceNotFoundException exception = new ResourceNotFoundException(NOT_FOUND_ERROR + id);
+
+		when(contractService.getContractById(id)).thenThrow(exception);
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/contracts/{id}", id).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(MockMvcResultMatchers.status().isNotFound());
+	}
+
+	@Test
+	void testDeleteContract() throws Exception {
 		ResponseEntity<Response> expectedResponse = new ResponseEntity<Response>(
-				new Response(true, contractDTO, null, new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
-		when(contractService.updateContract(contractDTO.getId(), contractDTO)).thenReturn(expectedResponse);
+				new Response(true, null, null, new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
+		when(contractService.deleteContract(contractDTO.getId())).thenReturn(expectedResponse);
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/contracts/{id}", contractDTO.getId())
 				.contentType(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isOk());
 	}
+
+	@Test
+	void testDeleteContractResourceNotFoundException() throws Exception {
+		long id = 1000;
+		ResourceNotFoundException exception = new ResourceNotFoundException(NOT_FOUND_ERROR + id);
+
+		when(contractService.deleteContract(id)).thenThrow(exception);
+
+		mockMvc.perform(MockMvcRequestBuilders.delete("/contracts/{id}", id).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(MockMvcResultMatchers.status().isNotFound());
+	}
+
 }

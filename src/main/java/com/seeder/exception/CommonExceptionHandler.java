@@ -14,15 +14,15 @@ import com.seeder.model.Response;
 public class CommonExceptionHandler {
 
 	@ExceptionHandler
-	public ResponseEntity<Object> handleException(ResourceNotFoundException e) {
-		return new ResponseEntity<Object>(
+	public ResponseEntity<Response> handleException(ResourceNotFoundException e) {
+		return new ResponseEntity<>(
 				new Response(false, null, e.getMessage(), new Timestamp(System.currentTimeMillis())),
 				HttpStatus.NOT_FOUND);
 	}
 
 	@ExceptionHandler
-	public ResponseEntity<Object> handleException(Exception e) {
-		return new ResponseEntity<Object>(
+	public ResponseEntity<Response> handleException(Exception e) {
+		return new ResponseEntity<>(
 				new Response(false, null, e.getMessage(), new Timestamp(System.currentTimeMillis())),
 				HttpStatus.INTERNAL_SERVER_ERROR);
 	}

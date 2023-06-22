@@ -1,7 +1,6 @@
 package com.seeder.dto;
 
-import java.sql.Date;
-import java.sql.Timestamp;
+import java.math.BigDecimal;
 
 public class ContractDTO {
 
@@ -9,11 +8,11 @@ public class ContractDTO {
 	private String name;
 	private String type;
 	private int termLength;
-	private int availableAmount;
-	private int financedAmount;
+	private BigDecimal availableAmount;
+	private BigDecimal financedAmount;
 	private int interestRate;
 	private String status;
-	private int userId;
+	private long userId;
 
 	public long getId() {
 		return id;
@@ -47,19 +46,19 @@ public class ContractDTO {
 		this.termLength = termLength;
 	}
 
-	public int getAvailableAmount() {
+	public BigDecimal getAvailableAmount() {
 		return availableAmount;
 	}
 
-	public void setAvailableAmount(int availableAmount) {
+	public void setAvailableAmount(BigDecimal availableAmount) {
 		this.availableAmount = availableAmount;
 	}
 
-	public int getFinancedAmount() {
+	public BigDecimal getFinancedAmount() {
 		return financedAmount;
 	}
 
-	public void setFinancedAmount(int financedAmount) {
+	public void setFinancedAmount(BigDecimal financedAmount) {
 		this.financedAmount = financedAmount;
 	}
 
@@ -79,11 +78,11 @@ public class ContractDTO {
 		this.status = status;
 	}
 
-	public int getUserId() {
+	public long getUserId() {
 		return userId;
 	}
 
-	public void setUserId(int userId) {
+	public void setUserId(long userId) {
 		this.userId = userId;
 	}
 

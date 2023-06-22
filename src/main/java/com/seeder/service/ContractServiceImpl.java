@@ -3,7 +3,6 @@ package com.seeder.service;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -12,10 +11,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import com.seeder.dto.ContractDTO;
+import com.seeder.logger.SeederLogger;
 import com.seeder.mapper.DataMapper;
-import com.seeder.model.Response;
 import com.seeder.model.Contract;
+import com.seeder.model.Response;
+import com.seeder.model.User;
 import com.seeder.repository.ContractRepository;
+import com.seeder.repository.UserRepository;
 
 @Component
 public class ContractServiceImpl implements ContractService {
@@ -24,13 +26,28 @@ public class ContractServiceImpl implements ContractService {
 	ContractRepository contractRepository;
 
 	@Autowired
+	UserRepository userRepository;
+
+	@Autowired
 	DataMapper mapper;
+
+	@Autowired
+	SeederLogger logger;
+
+	private final static String NOT_FOUND_ERROR = "Contract not found in ";
 
 	@Override
 	public ResponseEntity<Response> addContract(ContractDTO contractDto) {
-		Contract contract = contractRepository.save(mapper.toContractEntity(contractDto));
-		return new ResponseEntity<Response>(
-				new Response(true, mapper.toContractDto(contract), null, new Timestamp(System.currentTimeMillis())),
+		Contract contract = mapper.toContractEntity(contractDto);
+		Optional<User> user = userRepository.findById(contractDto.getUserId());
+		if(user.isEmpty()) {
+			logger.error(this.getClass(), "User not found_in " + contractDto.getUserId());
+			throw new ResourceNotFoundException("User not found in " + contractDto.getUserId());
+		}
+		contract.setUsers(user.get());
+		contractRepository.save(contract);
+		contractDto.setUserId(user.get().getId());
+		return new ResponseEntity<>(new Response(true, contractDto, null, new Timestamp(System.currentTimeMillis())),
 				HttpStatus.CREATED);
 	}
 
@@ -38,10 +55,11 @@ public class ContractServiceImpl implements ContractService {
 	public ResponseEntity<Response> updateContract(Long id, ContractDTO contractDto) {
 		Optional<Contract> contract = contractRepository.findById(id);
 		if (contract.isEmpty()) {
-			throw new ResourceNotFoundException("Contract not found in " + id);
+			logger.error(this.getClass(), NOT_FOUND_ERROR + id);
+			throw new ResourceNotFoundException(NOT_FOUND_ERROR + id);
 		}
 		Contract updatedContract = contractRepository.save(mapper.toContractEntity(contractDto));
-		return new ResponseEntity<Response>(new Response(true, mapper.toContractDto(updatedContract), null,
+		return new ResponseEntity<>(new Response(true, mapper.toContractDto(updatedContract), null,
 				new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
 	}
 
@@ -49,29 +67,36 @@ public class ContractServiceImpl implements ContractService {
 	public ResponseEntity<Response> getContractById(Long id) {
 		Optional<Contract> contract = contractRepository.findById(id);
 		if (contract.isEmpty()) {
-			throw new ResourceNotFoundException("Contract not found in " + id);
+			logger.error(this.getClass(), NOT_FOUND_ERROR + id);
+			throw new ResourceNotFoundException(NOT_FOUND_ERROR + id);
 		}
-		return new ResponseEntity<Response>(new Response(true, mapper.toContractDto(contract.get()), null,
-				new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
+		ContractDTO contractDto = mapper.toContractDto(contract.get());
+		contractDto.setUserId(contract.get().getUsers().getId());
+		return new ResponseEntity<>(new Response(true, contractDto, null, new Timestamp(System.currentTimeMillis())),
+				HttpStatus.OK);
 	}
 
 	@Override
 	public ResponseEntity<Response> getContracts() {
 		List<Contract> contracts = contractRepository.findAll();
-		List<ContractDTO> contractsDto = contracts.stream().map((contract) -> mapper.toContractDto(contract))
-				.collect(Collectors.toList());
-		return new ResponseEntity<Response>(
-				new Response(true, contractsDto, null, new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
+		List<ContractDTO> contractsDto = contracts.stream().map(contract -> {
+			ContractDTO contractDto = mapper.toContractDto(contract);
+			contractDto.setUserId(contract.getUsers().getId());
+			return contractDto;
+		}).toList();
+		return new ResponseEntity<>(new Response(true, contractsDto, null, new Timestamp(System.currentTimeMillis())),
+				HttpStatus.OK);
 	}
 
 	@Override
 	public ResponseEntity<Response> deleteContract(Long id) {
 		Optional<Contract> contract = contractRepository.findById(id);
 		if (contract.isEmpty()) {
-			throw new ResourceNotFoundException("Contract not found in " + id);
+			logger.error(this.getClass(), NOT_FOUND_ERROR + id);
+			throw new ResourceNotFoundException(NOT_FOUND_ERROR + id);
 		}
 		contractRepository.deleteById(id);
-		return new ResponseEntity<Response>(new Response(true, null, null, new Timestamp(System.currentTimeMillis())),
+		return new ResponseEntity<>(new Response(true, null, null, new Timestamp(System.currentTimeMillis())),
 				HttpStatus.OK);
 	}
 
