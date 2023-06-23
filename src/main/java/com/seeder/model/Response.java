@@ -1,29 +1,30 @@
 package com.seeder.model;
 
 import java.sql.Timestamp;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Response {
 
-	public boolean sucesss;
+	public boolean success;
 	public Object data;
 	public Timestamp time;
 	public String error;
 
-	public Response(boolean sucesss, Object data, String error, Timestamp time) {
-		this.sucesss = sucesss;
+	public Response(boolean success, Object data, String error, Timestamp time) {
+		this.success = success;
 		this.data = data;
 		this.time = time;
 		this.error = error;
 	}
 
-	public boolean isSucesss() {
-		return sucesss;
+	public boolean isSuccess() {
+		return success;
 	}
 
-	public void setSucesss(boolean sucesss) {
-		this.sucesss = sucesss;
+	public void setSuccess(boolean success) {
+		this.success = success;
 	}
 
 	public Object getData() {

@@ -1,6 +1,7 @@
 package com.seeder.model;
 
 import java.math.BigDecimal;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,15 +19,17 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "contracts")
+@Table(name = "cash_kicks")
 @EntityListeners(AuditingEntityListener.class)
 @JsonIgnoreProperties("users")
-public class Contract {
+public class CashKick {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,20 +38,11 @@ public class Contract {
 	@Column(name = "name", nullable = false, length = 50)
 	private String name;
 
-	@Column(name = "type", nullable = false, length = 50)
-	private String type;
+	@Column(name = "received_amount", nullable = false)
+	private BigDecimal receivedAmount;
 
-	@Column(name = "term_length", nullable = false)
-	private int termLength;
-
-	@Column(name = "available_amount", nullable = false)
-	private BigDecimal availableAmount;
-
-	@Column(name = "financed_amount", nullable = false)
-	private BigDecimal financedAmount;
-
-	@Column(name = "interest_rate", nullable = false)
-	private int interestRate;
+	@Column(name = "maturity_date", nullable = false)
+	private Date maturityDate;
 
 	@Column(name = "status", nullable = false, length = 50)
 	private String status;
@@ -61,12 +55,21 @@ public class Contract {
 	@LastModifiedDate
 	private Date updatedDate;
 
+	@ManyToMany
+	@JoinTable(name = "cash_kicks_contracts", joinColumns = @JoinColumn(name = "cash_kicks_id"), inverseJoinColumns = @JoinColumn(name = "contracts_id"))
+	private Set<Contract> contracts = new HashSet<>();
+	
 	@ManyToOne
 	@JoinColumn(name = "user_id", nullable = false)
 	private User users;
 
-	@ManyToMany(mappedBy = "contracts")
-	private Set<CashKick> cash_kicks = new HashSet<>();
+	@PrePersist
+	private void setMaturityDate() {
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(new Date());
+		calendar.add(Calendar.YEAR, 1);
+		maturityDate = calendar.getTime();
+	}
 
 	public long getId() {
 		return id;
@@ -84,44 +87,20 @@ public class Contract {
 		this.name = name;
 	}
 
-	public String getType() {
-		return type;
+	public BigDecimal getReceivedAmount() {
+		return receivedAmount;
 	}
 
-	public void setType(String type) {
-		this.type = type;
+	public void setReceivedAmount(BigDecimal receivedAmount) {
+		this.receivedAmount = receivedAmount;
 	}
 
-	public int getTermLength() {
-		return termLength;
+	public Date getMaturityDate() {
+		return maturityDate;
 	}
 
-	public void setTermLength(int termLength) {
-		this.termLength = termLength;
-	}
-
-	public BigDecimal getAvailableAmount() {
-		return availableAmount;
-	}
-
-	public void setAvailableAmount(BigDecimal availableAmount) {
-		this.availableAmount = availableAmount;
-	}
-
-	public BigDecimal getFinancedAmount() {
-		return financedAmount;
-	}
-
-	public void setFinancedAmount(BigDecimal financedAmount) {
-		this.financedAmount = financedAmount;
-	}
-
-	public int getInterestRate() {
-		return interestRate;
-	}
-
-	public void setInterestRate(int interestRate) {
-		this.interestRate = interestRate;
+	public void setMaturityDate(Date maturityDate) {
+		this.maturityDate = maturityDate;
 	}
 
 	public String getStatus() {
@@ -146,6 +125,14 @@ public class Contract {
 
 	public void setUpdatedDate(Date updatedDate) {
 		this.updatedDate = updatedDate;
+	}
+
+	public Set<Contract> getContracts() {
+		return contracts;
+	}
+
+	public void setContracts(Set<Contract> contracts) {
+		this.contracts = contracts;
 	}
 
 	public User getUsers() {
