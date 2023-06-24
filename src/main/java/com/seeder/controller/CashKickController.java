@@ -1,5 +1,7 @@
 package com.seeder.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.seeder.dto.CashKickDTO;
-import com.seeder.logger.SeederLogger;
 import com.seeder.model.Response;
 import com.seeder.service.CashKickService;
 
@@ -23,36 +24,35 @@ public class CashKickController {
 	@Autowired
 	CashKickService cashKickService;
 	
-	@Autowired
-	SeederLogger logger;
+	Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	@PostMapping
 	public ResponseEntity<Response> addCashKick(@RequestBody CashKickDTO cashKickDto) {
-		logger.info(this.getClass(), "Add Cash Kick API");
+		logger.info("Add Cash Kick API");
 		return cashKickService.addCashKick(cashKickDto);
 	}
 	
 	@PatchMapping("/{id}")
 	public ResponseEntity<Response> updateCashKick(@PathVariable Long id,@RequestBody CashKickDTO cashKickDto) {
-		logger.info(this.getClass(), "Update Cash Kick API");
+		logger.info("Update Cash Kick API");
 		return cashKickService.updateCashKick(id,cashKickDto);
 	}
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<Response> getCashKickById(@PathVariable Long id) {
-		logger.info(this.getClass(), "Get Cash Kick By Id API");
+		logger.info("Get Cash Kick By Id API");
 		return cashKickService.getCashKickById(id);
 	}
 
 	@GetMapping
 	public ResponseEntity<Response> getCashKicks() {
-		logger.info(this.getClass(), "Get Cash Kicks API");
+		logger.info("Get Cash Kicks API");
 		return cashKickService.getCashKicks();
 	}
 
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Response> deleteCashKick(@PathVariable Long id) {
-		logger.info(this.getClass(), "Delete Cash Kick API");
+		logger.info("Delete Cash Kick API");
 		return cashKickService.deleteCashKick(id);
 	}
 	
