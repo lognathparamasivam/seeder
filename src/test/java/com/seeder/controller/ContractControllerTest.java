@@ -30,7 +30,7 @@ import com.seeder.service.ContractService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class ContractControllerTest {
+class ContractControllerTest {
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -45,7 +45,7 @@ public class ContractControllerTest {
 
 	private List<ContractDTO> contractDTOList;
 
-	private final static String NOT_FOUND_ERROR = "Contract not found in ";
+	private String notFoundError = "Contract not found in ";
 
 	@BeforeEach
 	void setup() throws Exception {
@@ -109,7 +109,7 @@ public class ContractControllerTest {
 	@Test
 	void testGetContractByIdResourceNotFoundException() throws Exception {
 		long id = 1000;
-		ResourceNotFoundException exception = new ResourceNotFoundException(NOT_FOUND_ERROR + id);
+		ResourceNotFoundException exception = new ResourceNotFoundException(notFoundError + id);
 
 		when(contractService.getContractById(id)).thenThrow(exception);
 
@@ -130,7 +130,7 @@ public class ContractControllerTest {
 	@Test
 	void testDeleteContractResourceNotFoundException() throws Exception {
 		long id = 1000;
-		ResourceNotFoundException exception = new ResourceNotFoundException(NOT_FOUND_ERROR + id);
+		ResourceNotFoundException exception = new ResourceNotFoundException(notFoundError + id);
 
 		when(contractService.deleteContract(id)).thenThrow(exception);
 

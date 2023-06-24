@@ -18,8 +18,11 @@
 		<sonar.organization>zemoso-int</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 		<sonar.exclusions>
-        **/com/seeder/dto/**/*,**/com/seeder/model/**/*
+        **/com/seeder/dto/**/*,**/com/seeder/model/**/*,/src/test/*
     </sonar.exclusions>
+    <sonar.coverage.jacoco.xmlReportPaths>
+    ../app-it/target/site/jacoco-aggregate/jacoco.xml
+  </sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -59,8 +62,8 @@
 				<version>0.8.7</version>
 				<configuration>
 					<excludes>
-						<exclude>com.seeder.dto/**</exclude>
-						<exclude>com.seeder.model/**</exclude>
+						<exclude>com/seeder/dto/**</exclude>
+						<exclude>com/seeder/model/**</exclude>
 					</excludes>
 				</configuration>
 				<executions>

@@ -6,32 +6,27 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.seeder.controller.CashKickController;
 import com.seeder.dto.CashKickDTO;
 import com.seeder.mapper.DataMapper;
 import com.seeder.model.CashKick;
@@ -42,179 +37,167 @@ import com.seeder.repository.CashKickRepository;
 import com.seeder.repository.ContractRepository;
 import com.seeder.repository.UserRepository;
 
-@SpringBootTest
-@AutoConfigureMockMvc
 class CashKickServiceImplTest {
 
-	@Autowired
-	private MockMvc mockMvc;
-
-	@MockBean
-	private CashKickService cashKickService;
-
-	@MockBean
+	@Mock
 	private CashKickRepository cashKickRepository;
 
-	@MockBean
+	@Mock
 	private ContractRepository contractRepository;
 
-	@MockBean
+	@Mock
 	private UserRepository userRepository;
 
-	@MockBean
-	DataMapper mapper;
+	@Mock
+	private DataMapper mapper;
+
+	@Mock
+	Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	@InjectMocks
-	private CashKickController cashKickController;
+	private CashKickServiceImpl cashKickService;
 
-	private CashKickDTO cashKickDTO;
-
-	private CashKick cashKick;
-
-	private User user;
-
-	private List<CashKickDTO> cashKickDTOList;
-
-	private List<CashKick> cashKickList;
+	private String notFoundError = "Cashkick not found in ";
 
 	@BeforeEach
-	void setup() throws Exception {
+	void setUp() {
 		MockitoAnnotations.openMocks(this);
-		cashKickDTO = new CashKickDTO();
-		cashKickDTO.setId(1L);
-		cashKickDTO.setName("Test Contract");
-		cashKickDTO.setStatus("Pending");
-		cashKickDTO.setReceivedAmount(BigDecimal.valueOf(100));
-		List<Long> contractIdList = new ArrayList<>();
-		contractIdList.add(1L);
-		cashKickDTO.setContractIds(contractIdList);
-		cashKickDTO.setUserId(1);
-		cashKickDTOList = new ArrayList<>();
-		cashKickDTOList.add(cashKickDTO);
-
-		cashKick = new CashKick();
-		cashKick.setId(1L);
-
-		user = new User();
-		user.setId(2L);
-		cashKickList = new ArrayList<>();
-		cashKickList.add(cashKick);
-
 	}
 
 	@Test
-	void testAddCashKick() throws Exception {
-		ResponseEntity<Response> expectedResponse = new ResponseEntity<Response>(
-				new Response(true, cashKickDTO, null, new Timestamp(System.currentTimeMillis())), HttpStatus.CREATED);
-		when(cashKickService.addCashKick(cashKickDTO)).thenReturn(expectedResponse);
+	void testAddCashKick() {
 
-		when(contractRepository.findById(1L)).thenReturn(Optional.of(new Contract()));
-		when(userRepository.findById(2L)).thenReturn(Optional.of(user));
-		when(mapper.toCashKickEntity(cashKickDTO)).thenReturn(cashKick);
-		when(cashKickRepository.save(cashKick)).thenReturn(cashKick);
+		Long userId = 1L;
+		Long contractId = 1L;
+		CashKickDTO cashKickDto = new CashKickDTO();
+		cashKickDto.setUserId(userId);
+		cashKickDto.setContractIds(Collections.singletonList(contractId));
+		User user = new User();
+		user.setId(userId);
+		Contract contract = new Contract();
+		contract.setId(contractId);
+		CashKick cashKick = new CashKick();
+		cashKick.setUsers(user);
+		cashKick.setContracts(Collections.singleton(contract));
 
-		ResponseEntity<Response> response = cashKickService.addCashKick(cashKickDTO);
+		when(contractRepository.findById(contractId)).thenReturn(Optional.of(contract));
+		when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(mapper.toCashKickEntity(cashKickDto)).thenReturn(cashKick);
+
+		ResponseEntity<Response> response = cashKickService.addCashKick(cashKickDto);
 		assertEquals(HttpStatus.CREATED, response.getStatusCode());
-		assertNotNull(response.getBody());
 		assertTrue(response.getBody().isSuccess());
-		assertEquals(cashKickDTO, response.getBody().getData());
+		assertEquals(cashKickDto, response.getBody().getData());
 		assertNotNull(response.getBody().getTime());
 
-		mockMvc.perform(MockMvcRequestBuilders.post("/cash-kicks")
-				.content(new ObjectMapper().writeValueAsString(cashKickDTO)).contentType(MediaType.APPLICATION_JSON))
-				.andExpect(MockMvcResultMatchers.status().isOk());
+		verify(cashKickRepository).save(cashKick);
 	}
 
 	@Test
-	void testUpdateCashKick() throws Exception {
-		cashKickDTO.setName("New Contract");
-		ResponseEntity<Response> expectedResponse = new ResponseEntity<Response>(
-				new Response(true, cashKickDTO, null, new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
-		when(cashKickService.updateCashKick(cashKickDTO.getId(), cashKickDTO)).thenReturn(expectedResponse);
+	void testAddCashKick_ResourceNotFoundException() {
+		CashKickDTO cashKickDto = new CashKickDTO();
+		cashKickDto.setUserId(1L);
 
-		when(cashKickRepository.findById(cashKickDTO.getId())).thenReturn(Optional.of(cashKick));
+		when(userRepository.findById(cashKickDto.getUserId())).thenReturn(Optional.empty());
+
+		ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+				() -> cashKickService.addCashKick(cashKickDto));
+		assertEquals("User not found in 1", exception.getMessage());
+		verify(logger).error("User not found in {}",1L);
+		verify(cashKickRepository, never()).save(any(CashKick.class));
+		verify(mapper, never()).toCashKickEntity(any(CashKickDTO.class));
+	}
+
+	@Test
+	void testUpdateCashKick() {
+
+		Long cashKickId = 1L;
+		CashKickDTO cashKickDto = new CashKickDTO();
+		cashKickDto.setId(cashKickId);
+		CashKick cashKick = new CashKick();
+		cashKick.setId(cashKickId);
+
+		when(cashKickRepository.findById(cashKickId)).thenReturn(Optional.of(cashKick));
 		when(cashKickRepository.save(any(CashKick.class))).thenReturn(cashKick);
-		when(mapper.toCashKickDto(cashKick)).thenReturn(cashKickDTO);
-		ResponseEntity<Response> response = cashKickService.updateCashKick(cashKickDTO.getId(), cashKickDTO);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertTrue(response.getBody().isSuccess());
-		assertEquals(cashKickDTO, response.getBody().getData());
-		assertNotNull(response.getBody().getTime());
+		when(mapper.toCashKickDto(cashKick)).thenReturn(cashKickDto);
 
-		mockMvc.perform(MockMvcRequestBuilders.patch("/cash-kicks/{id}", cashKickDTO.getId())
-				.content(new ObjectMapper().writeValueAsString(cashKickDTO)).contentType(MediaType.APPLICATION_JSON))
-				.andExpect(MockMvcResultMatchers.status().isOk());
+		ResponseEntity<Response> response = cashKickService.updateCashKick(cashKickId, cashKickDto);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertTrue(response.getBody().isSuccess());
+		assertNotNull(response.getBody().getTime());
 
 	}
 
 	@Test
-	void testGetCashKicks() throws Exception {
+	void testUpdateCashKick_ResourceNotFoundException() {
 
-		ResponseEntity<Response> expectedResponse = new ResponseEntity<Response>(
-				new Response(true, cashKickDTOList, null, new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
-		when(cashKickService.getCashKicks()).thenReturn(expectedResponse);
-
-		when(cashKickRepository.findAll()).thenReturn(cashKickList);
-		when(mapper.toCashKickDto(any(CashKick.class))).thenReturn(new CashKickDTO());
-
-		ResponseEntity<Response> response = cashKickService.getCashKicks();
-
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertTrue(response.getBody().isSuccess());
-		assertEquals(cashKickDTOList, response.getBody().getData());
-		assertNotNull(response.getBody().getTime());
-
-		mockMvc.perform(MockMvcRequestBuilders.get("/cash-kicks").contentType(MediaType.APPLICATION_JSON))
-				.andExpect(MockMvcResultMatchers.status().isOk());
+		Long cashKickId = 1L;
+		CashKickDTO cashKickDto = new CashKickDTO();
+		when(cashKickRepository.findById(cashKickId)).thenReturn(Optional.empty());
+		assertThrows(ResourceNotFoundException.class, () -> cashKickService.updateCashKick(cashKickId, cashKickDto));
+		verify(logger).error(notFoundError,cashKickId);
 	}
 
 	@Test
-	void testGetCashKickById() throws Exception {
-		ResponseEntity<Response> expectedResponse = new ResponseEntity<Response>(
-				new Response(true, cashKickDTO, null, new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
-		when(cashKickService.getCashKickById(cashKickDTO.getId())).thenReturn(expectedResponse);
+	void testGetCashKickById() {
 
-		when(cashKickRepository.findById(cashKickDTO.getId())).thenReturn(Optional.of(cashKick));
+		Long cashKickId = 1L;
+		CashKick cashKick = new CashKick();
+		cashKick.setId(cashKickId);
+
+		when(cashKickRepository.findById(cashKickId)).thenReturn(Optional.of(cashKick));
 		when(mapper.toCashKickDto(cashKick)).thenReturn(new CashKickDTO());
 
-		ResponseEntity<Response> response = cashKickService.getCashKickById(cashKickDTO.getId());
-
+		ResponseEntity<Response> response = cashKickService.getCashKickById(cashKickId);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotNull(response.getBody());
 		assertTrue(response.getBody().isSuccess());
 		assertNotNull(response.getBody().getData());
 		assertNotNull(response.getBody().getTime());
+	}
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/cash-kicks/{id}", cashKickDTO.getId())
-				.contentType(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isOk());
+	@Test
+	void testGetCashKickById_ResourceNotFoundException() {
+		Long cashKickId = 1L;
+		when(cashKickRepository.findById(cashKickId)).thenReturn(Optional.empty());
+		assertThrows(ResourceNotFoundException.class, () -> cashKickService.getCashKickById(cashKickId));
+		verify(logger).error(notFoundError,cashKickId);
+	}
 
+	@Test
+	void testGetCashKicks() {
+		List<CashKick> cashKicks = new ArrayList<>();
+		cashKicks.add(new CashKick());
+		cashKicks.add(new CashKick());
+
+		when(cashKickRepository.findAll()).thenReturn(cashKicks);
+		when(mapper.toCashKickDto(any(CashKick.class))).thenReturn(new CashKickDTO());
+
+		ResponseEntity<Response> response = cashKickService.getCashKicks();
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertTrue(response.getBody().isSuccess());
+		assertNotNull(response.getBody().getData());
+		assertNotNull(response.getBody().getTime());
 	}
 
 	@Test
 	void testDeleteCashKick() {
-		try {
-			ResponseEntity<Response> expectedResponse = new ResponseEntity<Response>(
-					new Response(true, null, null, new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
-			when(cashKickService.deleteCashKick(cashKickDTO.getId())).thenReturn(expectedResponse);
+		Long cashKickId = 1L;
+		when(cashKickRepository.findById(cashKickId)).thenReturn(Optional.of(new CashKick()));
 
-			mockMvc.perform(MockMvcRequestBuilders.delete("/cash-kicks/{id}", cashKickDTO.getId())
-					.contentType(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isOk());
+		ResponseEntity<Response> response = cashKickService.deleteCashKick(cashKickId);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertTrue(response.getBody().isSuccess());
+		assertNull(response.getBody().getData());
+		assertNotNull(response.getBody().getTime());
+		verify(cashKickRepository).deleteById(cashKickId);
+	}
 
-			when(cashKickRepository.findById(cashKickDTO.getId())).thenReturn(Optional.of(cashKick));
-
-			ResponseEntity<Response> response = cashKickService.deleteCashKick(cashKickDTO.getId());
-
-			assertEquals(HttpStatus.OK, response.getStatusCode());
-			assertNotNull(response.getBody());
-			assertTrue(response.getBody().isSuccess());
-			assertNull(response.getBody().getData());
-			assertNotNull(response.getBody().getTime());
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	@Test
+	void testDeleteCashKick_ResourceNotFoundException() {
+		Long cashKickId = 1L;
+		when(cashKickRepository.findById(cashKickId)).thenReturn(Optional.empty());
+		assertThrows(ResourceNotFoundException.class, () -> cashKickService.deleteCashKick(cashKickId));
+		verify(logger).error(notFoundError,cashKickId);
 	}
 
 }

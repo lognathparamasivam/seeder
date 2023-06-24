@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -13,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import com.seeder.dto.CashKickDTO;
-import com.seeder.logger.SeederLogger;
 import com.seeder.mapper.DataMapper;
 import com.seeder.model.CashKick;
 import com.seeder.model.Contract;
@@ -38,13 +39,19 @@ public class CashKickServiceImpl implements CashKickService {
 	@Autowired
 	DataMapper mapper;
 
-	@Autowired
-	SeederLogger logger;
+	Logger logger = LoggerFactory.getLogger(this.getClass());
 
-	private final static String NOT_FOUND_ERROR = "Cashkick not found in  ";
+	private String notFoundError = "Cashkick not found in ";
 
 	@Override
 	public ResponseEntity<Response> addCashKick(CashKickDTO cashKickDto) {
+
+		Optional<User> user = userRepository.findById(cashKickDto.getUserId());
+		if (user.isEmpty()) {
+			logger.error("User not found in {}",cashKickDto.getUserId());
+			throw new ResourceNotFoundException("User not found in " + cashKickDto.getUserId());
+		}
+
 		Set<Contract> contractSet = new HashSet<>();
 		for (Long contractIds : cashKickDto.getContractIds()) {
 			Optional<Contract> contract = contractRepository.findById(contractIds);
@@ -52,12 +59,6 @@ public class CashKickServiceImpl implements CashKickService {
 		}
 		CashKick cashKick = mapper.toCashKickEntity(cashKickDto);
 		cashKick.setContracts(contractSet);
-
-		Optional<User> user = userRepository.findById(cashKickDto.getUserId());
-		if (user.isEmpty()) {
-			logger.error(this.getClass(), "User not found_in  " + cashKickDto.getUserId());
-			throw new ResourceNotFoundException("User not found_in  " + cashKickDto.getUserId());
-		}
 		cashKick.setUsers(user.get());
 		cashKickRepository.save(cashKick);
 		return new ResponseEntity<>(new Response(true, cashKickDto, null, new Timestamp(System.currentTimeMillis())),
@@ -68,8 +69,8 @@ public class CashKickServiceImpl implements CashKickService {
 	public ResponseEntity<Response> updateCashKick(Long id, CashKickDTO cashKickDto) {
 		Optional<CashKick> cashKick = cashKickRepository.findById(id);
 		if (cashKick.isEmpty()) {
-			logger.error(this.getClass(), NOT_FOUND_ERROR + id);
-			throw new ResourceNotFoundException(NOT_FOUND_ERROR + id);
+			logger.error(notFoundError,id);
+			throw new ResourceNotFoundException(notFoundError + id);
 		}
 		CashKick updatedCashKick = cashKickRepository.save(mapper.toCashKickEntity(cashKickDto));
 		return new ResponseEntity<>(new Response(true, mapper.toCashKickDto(updatedCashKick), null,
@@ -80,8 +81,8 @@ public class CashKickServiceImpl implements CashKickService {
 	public ResponseEntity<Response> getCashKickById(Long id) {
 		Optional<CashKick> cashKick = cashKickRepository.findById(id);
 		if (cashKick.isEmpty()) {
-			logger.error(this.getClass(), NOT_FOUND_ERROR + id);
-			throw new ResourceNotFoundException(NOT_FOUND_ERROR + id);
+			logger.error(notFoundError,id);
+			throw new ResourceNotFoundException(notFoundError + id);
 		}
 		return new ResponseEntity<>(new Response(true, mapper.toCashKickDto(cashKick.get()), null,
 				new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
@@ -99,8 +100,8 @@ public class CashKickServiceImpl implements CashKickService {
 	public ResponseEntity<Response> deleteCashKick(Long id) {
 		Optional<CashKick> cashKick = cashKickRepository.findById(id);
 		if (cashKick.isEmpty()) {
-			logger.error(this.getClass(), NOT_FOUND_ERROR + id);
-			throw new ResourceNotFoundException(NOT_FOUND_ERROR + id);
+			logger.error(notFoundError,id);
+			throw new ResourceNotFoundException(notFoundError + id);
 		}
 		cashKickRepository.deleteById(id);
 		return new ResponseEntity<>(new Response(true, null, null, new Timestamp(System.currentTimeMillis())),

@@ -16,6 +16,11 @@ public class DataMapper {
 
 	@Autowired
 	ModelMapper modelMapper;
+	
+
+	public void setModelMapper(ModelMapper modelMapper) {
+		this.modelMapper = modelMapper;
+	}
 
 	public ContractDTO toContractDto(Contract contract) {
 		return modelMapper.map(contract, ContractDTO.class);
