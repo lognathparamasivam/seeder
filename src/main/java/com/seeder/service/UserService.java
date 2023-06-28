@@ -18,4 +18,6 @@ public interface UserService {
 	ResponseEntity<Response> getUserById(Long id);
 
 	ResponseEntity<Response> deleteUser(Long id);
+
+	ResponseEntity<Response> getUserPaymentsById(Long id);
 }

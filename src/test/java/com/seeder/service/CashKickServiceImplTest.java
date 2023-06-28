@@ -6,12 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -31,10 +32,12 @@ import com.seeder.dto.CashKickDTO;
 import com.seeder.mapper.DataMapper;
 import com.seeder.model.CashKick;
 import com.seeder.model.Contract;
+import com.seeder.model.Payment;
 import com.seeder.model.Response;
 import com.seeder.model.User;
 import com.seeder.repository.CashKickRepository;
 import com.seeder.repository.ContractRepository;
+import com.seeder.repository.PaymentRepository;
 import com.seeder.repository.UserRepository;
 
 class CashKickServiceImplTest {
@@ -48,6 +51,9 @@ class CashKickServiceImplTest {
 	@Mock
 	private UserRepository userRepository;
 
+	@Mock
+	private PaymentRepository paymentRepository;
+	
 	@Mock
 	private DataMapper mapper;
 
@@ -77,12 +83,16 @@ class CashKickServiceImplTest {
 		Contract contract = new Contract();
 		contract.setId(contractId);
 		CashKick cashKick = new CashKick();
+		cashKick.setId(1L);
 		cashKick.setUsers(user);
 		cashKick.setContracts(Collections.singleton(contract));
+		List<Payment> payments = Arrays.asList(new Payment(), new Payment());
 
 		when(contractRepository.findById(contractId)).thenReturn(Optional.of(contract));
 		when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(cashKickRepository.save(any(CashKick.class))).thenReturn(cashKick);
 		when(mapper.toCashKickEntity(cashKickDto)).thenReturn(cashKick);
+		when(paymentRepository.saveAll(anyList())).thenReturn(payments);
 
 		ResponseEntity<Response> response = cashKickService.addCashKick(cashKickDto);
 		assertEquals(HttpStatus.CREATED, response.getStatusCode());

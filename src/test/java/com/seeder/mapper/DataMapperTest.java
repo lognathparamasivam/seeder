@@ -9,9 +9,11 @@ import org.modelmapper.ModelMapper;
 
 import com.seeder.dto.CashKickDTO;
 import com.seeder.dto.ContractDTO;
+import com.seeder.dto.PaymentDTO;
 import com.seeder.dto.UserDTO;
 import com.seeder.model.CashKick;
 import com.seeder.model.Contract;
+import com.seeder.model.Payment;
 import com.seeder.model.User;
 
 class DataMapperTest {
@@ -101,5 +103,31 @@ class DataMapperTest {
 		assertNotNull(userDto);
 		assertEquals(user.getId(), userDto.getId());
 		assertEquals(user.getName(), userDto.getName());
+	}
+
+	@Test
+	void testToPaymentEntity() {
+		PaymentDTO paymentDto = new PaymentDTO();
+		paymentDto.setId(1L);
+		paymentDto.setStatus("Pending");
+
+		Payment payment = dataMapper.toPaymentEntity(paymentDto);
+
+		assertNotNull(payment);
+		assertEquals(paymentDto.getId(), payment.getId());
+		assertEquals(paymentDto.getStatus(), payment.getStatus());
+	}
+
+	@Test
+	void testToPaymentDto() {
+		Payment payment = new Payment();
+		payment.setId(1L);
+		payment.setStatus("Pending");
+
+		PaymentDTO paymentDto = dataMapper.toPaymentDto(payment);
+
+		assertNotNull(paymentDto);
+		assertEquals(payment.getId(), paymentDto.getId());
+		assertEquals(payment.getStatus(), paymentDto.getStatus());
 	}
 }

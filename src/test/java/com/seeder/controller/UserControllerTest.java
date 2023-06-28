@@ -4,6 +4,7 @@ import static org.mockito.Mockito.when;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +24,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.seeder.dto.PaymentDTO;
 import com.seeder.dto.UserDTO;
 import com.seeder.model.Response;
 import com.seeder.service.UserService;
@@ -136,4 +138,26 @@ class UserControllerTest {
 				.andExpect(MockMvcResultMatchers.status().isNotFound());
 	}
 
+	@Test
+	void testGetUserPaymentsById() throws Exception {
+		List<PaymentDTO> paymentsDto = Arrays.asList(new PaymentDTO(), new PaymentDTO());
+		ResponseEntity<Response> expectedResponse = new ResponseEntity<Response>(
+				new Response(true, paymentsDto, null, new Timestamp(System.currentTimeMillis())), HttpStatus.OK);
+		when(userService.getUserPaymentsById(userDTO.getId())).thenReturn(expectedResponse);
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/users/{id}/payments", userDTO.getId())
+				.contentType(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isOk());
+	}
+
+	@Test
+	void testGetUserPaymentsByIdResourceNotFoundException() throws Exception {
+		long id = 1000;
+		ResourceNotFoundException exception = new ResourceNotFoundException(notFoundError + id);
+
+		when(userService.getUserPaymentsById(id)).thenThrow(exception);
+
+		mockMvc.perform(
+				MockMvcRequestBuilders.get("/users/{id}/payments", id).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(MockMvcResultMatchers.status().isNotFound());
+	}
 }

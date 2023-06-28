@@ -3,7 +3,6 @@ package com.seeder.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,10 +22,13 @@ import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.seeder.dto.PaymentDTO;
 import com.seeder.dto.UserDTO;
 import com.seeder.mapper.DataMapper;
+import com.seeder.model.Payment;
 import com.seeder.model.Response;
 import com.seeder.model.User;
+import com.seeder.repository.PaymentRepository;
 import com.seeder.repository.UserRepository;
 
 @SpringBootTest
@@ -34,6 +36,9 @@ class UserServiceImplTest {
 
 	@Mock
 	private UserRepository userRepository;
+	
+	@Mock
+	private PaymentRepository paymentRepository;
 
 	@Mock
 	private DataMapper mapper;
@@ -117,7 +122,6 @@ class UserServiceImplTest {
 	@Test
 	void testGetCashKickById_ResourceNotFoundException() {
 		Long userId = 1L;
-
 		when(userRepository.findById(userId)).thenReturn(Optional.empty());
 		assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(userId));
 		verify(logger).error(notFoundError,userId);
@@ -158,6 +162,32 @@ class UserServiceImplTest {
 		when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
 		assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(userId));
+		verify(logger).error(notFoundError,userId);
+	}
+	
+	@Test
+	void testGetUserPaymentsById() {
+		Long userId = 1L;
+		List<Payment> payments = Arrays.asList(new Payment(), new Payment());
+		User user = new User();
+		user.setId(userId);
+		
+		when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(paymentRepository.findByUsers_Id(userId)).thenReturn(payments);
+		when(mapper.toPaymentDto(any(Payment.class))).thenReturn(new PaymentDTO());
+
+		ResponseEntity<Response> response = userService.getUserPaymentsById(userId);
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(true, response.getBody().isSuccess());
+	}
+
+	@Test
+	void testGetUserPaymentsById_ResourceNotFoundException() {
+		Long userId = 1L;
+
+		when(userRepository.findById(userId)).thenReturn(Optional.empty());
+		assertThrows(ResourceNotFoundException.class, () -> userService.getUserPaymentsById(userId));
 		verify(logger).error(notFoundError,userId);
 	}
 

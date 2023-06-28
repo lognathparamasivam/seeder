@@ -56,6 +56,11 @@ public class UserController {
 		return userService.deleteUser(id);
 	}
 	
+	@GetMapping("/{id}/payments")
+	public ResponseEntity<Response> getUserPaymentsById(@PathVariable Long id) {
+		logger.info("Get User Payments By Id API");
+		return userService.getUserPaymentsById(id);
+	}
 	
 	
 
