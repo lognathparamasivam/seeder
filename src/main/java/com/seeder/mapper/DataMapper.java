@@ -6,9 +6,11 @@ import org.springframework.stereotype.Component;
 
 import com.seeder.dto.CashKickDTO;
 import com.seeder.dto.ContractDTO;
+import com.seeder.dto.PaymentDTO;
 import com.seeder.dto.UserDTO;
 import com.seeder.model.CashKick;
 import com.seeder.model.Contract;
+import com.seeder.model.Payment;
 import com.seeder.model.User;
 
 @Component
@@ -44,5 +46,13 @@ public class DataMapper {
 
 	public UserDTO toUserDto(User user) {
 		return modelMapper.map(user, UserDTO.class);
+	}
+	
+	public Payment toPaymentEntity(PaymentDTO paymentDto) {
+		return modelMapper.map(paymentDto, Payment.class);
+	}
+
+	public PaymentDTO toPaymentDto(Payment payment) {
+		return modelMapper.map(payment, PaymentDTO.class);
 	}
 }

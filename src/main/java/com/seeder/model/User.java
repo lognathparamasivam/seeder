@@ -7,6 +7,8 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +23,7 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "users")
 @EntityListeners(AuditingEntityListener.class)
+@JsonIgnoreProperties("payments")
 public class User {
 
 	@Id
@@ -56,6 +59,9 @@ public class User {
 	
 	@OneToMany(mappedBy = "users", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<CashKick> cashKicks;
+	
+	@OneToMany(mappedBy = "users", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Payment> payments;
 	
 	public long getId() {
 		return id;

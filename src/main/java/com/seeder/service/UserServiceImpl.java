@@ -12,10 +12,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import com.seeder.dto.PaymentDTO;
 import com.seeder.dto.UserDTO;
 import com.seeder.mapper.DataMapper;
+import com.seeder.model.Payment;
 import com.seeder.model.Response;
 import com.seeder.model.User;
+import com.seeder.repository.PaymentRepository;
 import com.seeder.repository.UserRepository;
 
 @Component
@@ -26,6 +29,9 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	DataMapper mapper;
+	
+	@Autowired
+	PaymentRepository paymentRepository;
 
 	Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -82,6 +88,19 @@ public class UserServiceImpl implements UserService {
 		}
 		userRepository.deleteById(id);
 		return new ResponseEntity<>(new Response(true, null, null, new Timestamp(System.currentTimeMillis())),
+				HttpStatus.OK);
+	}
+
+	@Override
+	public ResponseEntity<Response> getUserPaymentsById(Long id) {
+		Optional<User> user = userRepository.findById(id);
+		if (user.isEmpty()) {
+			logger.error(notFoundError,id);
+			throw new ResourceNotFoundException(notFoundError + id);
+		}
+		List<Payment> paymentList = paymentRepository.findByUsers_Id(id);
+		List<PaymentDTO> paymentsDto = paymentList.stream().map(payments -> mapper.toPaymentDto(payments)).toList();
+		return new ResponseEntity<>(new Response(true, paymentsDto, null, new Timestamp(System.currentTimeMillis())),
 				HttpStatus.OK);
 	}
 
