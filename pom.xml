@@ -18,7 +18,7 @@
 		<sonar.organization>zemoso-int</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 		<sonar.exclusions>
-        **/com/seeder/dto/**/*,**/com/seeder/model/**/*,/src/test/*
+        **/com/seeder/dto/**/*,**/com/seeder/model/**/*,/src/test/*,**/com/seeder/security/**/*
     </sonar.exclusions>
     <sonar.coverage.jacoco.xmlReportPaths>
     ../app-it/target/site/jacoco-aggregate/jacoco.xml
@@ -53,6 +53,10 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-rest</artifactId>
 		</dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+    </dependency>
 	</dependencies>
 	<build>
 		<plugins>
@@ -64,6 +68,7 @@
 					<excludes>
 						<exclude>com/seeder/dto/**</exclude>
 						<exclude>com/seeder/model/**</exclude>
+						<exclude>com/seeder/security/**</exclude>
 					</excludes>
 				</configuration>
 				<executions>

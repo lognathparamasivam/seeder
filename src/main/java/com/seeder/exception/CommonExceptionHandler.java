@@ -26,4 +26,5 @@ public class CommonExceptionHandler {
 				new Response(false, null, e.getMessage(), new Timestamp(System.currentTimeMillis())),
 				HttpStatus.INTERNAL_SERVER_ERROR);
 	}
+
 }
